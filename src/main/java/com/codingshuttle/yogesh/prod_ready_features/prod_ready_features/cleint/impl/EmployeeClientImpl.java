@@ -4,10 +4,12 @@ import com.codingshuttle.yogesh.prod_ready_features.prod_ready_features.advice.A
 import com.codingshuttle.yogesh.prod_ready_features.prod_ready_features.cleint.EmployeeClient;
 import com.codingshuttle.yogesh.prod_ready_features.prod_ready_features.config.RestClientConfig;
 import com.codingshuttle.yogesh.prod_ready_features.prod_ready_features.dto.EmployeeDTO;
+import com.codingshuttle.yogesh.prod_ready_features.prod_ready_features.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.RestClient;
@@ -28,13 +30,7 @@ public class EmployeeClientImpl implements EmployeeClient {
 
     @Override
     public List<EmployeeDTO> getAllEmployees() {
-
-        log.error("error log");
-        log.error("warn log");
-        log.error("info log");
-        log.error("debug log");
-        log.error("trace log");
-
+        log.trace("Trying to retiruve all employee in GetAllEmployee");
         try {
             ApiResponse<List<EmployeeDTO>> employeeDTOList = restClient.get()
                     .uri("employees")
@@ -62,6 +58,10 @@ public class EmployeeClientImpl implements EmployeeClient {
                 ApiResponse<EmployeeDTO> employeeResponse = restClient.get()
                         .uri("employees/{employeeId}" , employeeId)
                         .retrieve()
+                        .onStatus(HttpStatusCode::is4xxClientError , (req , res) -> {
+                        log.error(new String(res.getBody().readAllBytes()));
+                            throw new ResourceNotFoundException("could not create the employee");
+                        })
                         .body( new ParameterizedTypeReference<>(){
                         });
                 return employeeResponse.getData();
@@ -79,6 +79,10 @@ public class EmployeeClientImpl implements EmployeeClient {
                     .uri("employees")
                     .body(employeeDTO)
                     .retrieve()
+                    .onStatus(HttpStatusCode::is4xxClientError , (req , res) -> {
+                        System.out.println(new String(res.getBody().readAllBytes()));
+                        throw new ResourceNotFoundException("could not create the employee");
+                    })
                     .body(new ParameterizedTypeReference<>() {
                     });
             return employeeDTOApiResponse.getData();
