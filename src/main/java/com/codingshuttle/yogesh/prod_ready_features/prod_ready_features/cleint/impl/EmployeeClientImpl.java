@@ -54,20 +54,24 @@ public class EmployeeClientImpl implements EmployeeClient {
 
     @Override
     public EmployeeDTO getEmployeeById(Long employeeId) {
+        log.trace("Trying to create the empoyeee with informatio n {}" );
         try{
                 ApiResponse<EmployeeDTO> employeeResponse = restClient.get()
                         .uri("employees/{employeeId}" , employeeId)
                         .retrieve()
                         .onStatus(HttpStatusCode::is4xxClientError , (req , res) -> {
-                        log.error(new String(res.getBody().readAllBytes()));
+                            log.debug("4xx cleint erroer");
+                            log.error(new String(res.getBody().readAllBytes()));
                             throw new ResourceNotFoundException("could not create the employee");
                         })
                         .body( new ParameterizedTypeReference<>(){
                         });
+                log.trace("Succfeully created a new employee : {}");
                 return employeeResponse.getData();
 
 
         } catch (Exception e){
+            log.error("Exception occured in this log");
             throw new RuntimeException(e);
         }
     }
